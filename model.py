@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from transformer import PositionalEncoding, TransformerBlock
+from LearnTransformer import PositionalEncoding, TransformerBlock
 
 
 class LanguageModel(nn.Module):

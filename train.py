@@ -27,7 +27,8 @@ if __name__ == '__main__':
     lr_scheduler = optim.lr_scheduler.ExponentialLR(optimizer, 0.95)
     criterion = nn.CrossEntropyLoss()
 
-    # writer.add_graph(model)
+    dummy_input = torch.LongTensor([[1,2,3,4]]).to(device)
+    writer.add_graph(model, dummy_input)
 
     global_step = 0
 

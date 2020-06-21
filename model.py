@@ -31,7 +31,10 @@ class LanguageModel(nn.Module):
             slf_attn_list += [slf_attn] if return_attns else []
         output = self.lm_head(output) * self.logit_scale
         
-        return output, slf_attn_list
+        outputs = (output,)
+        if return_attns:
+            outputs += (slf_attn_list,)
+        return outputs
 
 
 if __name__ == '__main__':

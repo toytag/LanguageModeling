@@ -10,6 +10,6 @@ def utf8enc(file_name):
 
 
 if __name__ == '__main__':
-    data_dir = '../data/Gutenberg/txt/'
+    data_dir = 'data/Gutenberg/txt/'
     txt_files = [data_dir+file_name for file_name in os.listdir(data_dir)]
     thread_map(utf8enc, txt_files, max_workers=os.cpu_count())

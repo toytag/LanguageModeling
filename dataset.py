@@ -3,11 +3,15 @@ from multiprocessing import Pool, Manager
 
 import torch
 from torch.utils.data import Dataset, DataLoader
-from tokenizer import BertWordPieceTokenizer
+from tokenizer import ByteLevelBPETokenizer
 from tqdm import tqdm
 
 
-tokenizer = BertWordPieceTokenizer('models/tokenizer/vocab.txt', lowercase=True)
+tokenizer = ByteLevelBPETokenizer(
+    'models/tokenizer/vocab.json',
+    'models/tokenizer/merges.txt',
+    lowercase=True
+)
 
 
 class TextDataset(Dataset):

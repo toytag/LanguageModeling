@@ -53,7 +53,7 @@ def _enqueue_dataloader(txt_file, batch_size, block_len, shuffle, pin_memory, nu
 
 class TextDataLoaderIterator:
     def __init__(self, txt_files, batch_size=64, block_len=64, shuffle=True,
-                 pin_memory=False, num_workers=os.cpu_count(), prefetch_limit=10):
+                 pin_memory=True, num_workers=os.cpu_count(), prefetch_limit=10):
         self.m = Manager()
         self.p = Pool(num_workers)
         self.q = self.m.Queue(prefetch_limit)

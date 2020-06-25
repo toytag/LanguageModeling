@@ -7,7 +7,7 @@ if __name__ == '__main__':
     txt_files = [data_dir + file_name for file_name in os.listdir(data_dir)]
 
     tokenizer = ByteLevelBPETokenizer(lowercase=True)
-    tokenizer.train(txt_files, vocab_size=30000, min_frequency=10, special_tokens=[
+    tokenizer.train(txt_files, vocab_size=10000, min_frequency=10, special_tokens=[
         "<s>", "</s>", "<pad>", "<unk>", "<eos>", "<mask>",
     ])
     tokenizer.save('models/tokenizer/')

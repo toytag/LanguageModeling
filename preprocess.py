@@ -8,8 +8,9 @@ def utf8enc(file_name):
     with open(file_name, 'wb') as f:
         f.write(text)
 
+
 def paragraph2line(file_name):
-    with open(file_name, 'r') as f:
+    with open(file_name, 'r', encoding='utf-8') as f:
         text = [string.replace('\n', ' ') for string in f.read().split('\n\n')]
     with open(file_name, 'w') as f:
         f.write('\n\n'.join(text))

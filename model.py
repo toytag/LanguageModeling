@@ -4,7 +4,7 @@ from LearnTransformer import PositionalEncoding, TransformerBlock
 
 
 class LanguageModel(nn.Module):
-    def __init__(self, n_vocab, d_model=256, d_hidden=1024, n_layer=4,
+    def __init__(self, n_vocab, d_model=256, d_hidden=1024, n_layer=8,
                  n_head=8, d_k=64, d_v=64, n_position=64, dropout=0.1,
                  embed_weight_sharing=True):
         super(LanguageModel, self).__init__()

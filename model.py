@@ -4,7 +4,7 @@ from LearnTransformer import PositionalEncoding, TransformerBlock
 
 
 class LanguageModel(nn.Module):
-    def __init__(self, n_vocab, d_model=512, d_hidden=1024, n_layer=8,
+    def __init__(self, n_vocab, d_model=256, d_hidden=1024, n_layer=4,
                  n_head=8, d_k=64, d_v=64, n_position=64, dropout=0.1,
                  embed_weight_sharing=True):
         super(LanguageModel, self).__init__()
@@ -22,19 +22,12 @@ class LanguageModel(nn.Module):
             self.embed.weight = self.lm_head.weight
             self.logit_scale = d_model ** -0.5
 
-    def forward(self, src_seq, src_mask=None, return_attns=False):
-        slf_attn_list = []
-
+    def forward(self, src_seq, src_mask=None):
         output = self.dropout(self.pos_enc(self.embed(src_seq)))
         for transformer_block in self.transformers:
-            output, slf_attn = transformer_block(output, src_mask)
-            slf_attn_list += [slf_attn] if return_attns else []
+            output, _ = transformer_block(output, src_mask)
         output = self.lm_head(output) * self.logit_scale
-        
-        outputs = (output,)
-        if return_attns:
-            outputs += (slf_attn_list,)
-        return outputs
+        return output
 
 
 if __name__ == '__main__':

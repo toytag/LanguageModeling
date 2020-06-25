@@ -27,7 +27,7 @@ class LanguageModel(nn.Module):
         for transformer_block in self.transformers:
             output, _ = transformer_block(output, src_mask)
         output = self.lm_head(output) * self.logit_scale
-        return output
+        return output,
 
 
 if __name__ == '__main__':

@@ -1,18 +1,16 @@
 import os, time
 from multiprocessing import Pool, Manager
 
+import numpy as np
+from tqdm import tqdm
+
 import torch
 from torch.utils.data import Dataset, DataLoader
-from tokenizer import ByteLevelBPETokenizer
-from tqdm import tqdm
-import numpy as np
+
+from tokenizer import WordPieceTokenizer
 
 
-tokenizer = ByteLevelBPETokenizer(
-    'models/tokenizer/vocab.json',
-    'models/tokenizer/merges.txt',
-    lowercase=True
-)
+_tokenizer = WordPieceTokenizer('models/tokenizer/tokenizer.json')
 
 
 class TextDataset(Dataset):
@@ -22,7 +20,7 @@ class TextDataset(Dataset):
         self.examples = []
         self.block_len = block_len
         for line in textlines:
-            new_tokens = tokenizer.encode(line).ids
+            new_tokens = _tokenizer.encode(line)
             if len(new_tokens) <= self.block_len:
                 continue
             self.examples.append(new_tokens)
@@ -35,20 +33,18 @@ class TextDataset(Dataset):
         seq = self.examples[idx]
         seq_len = len(seq)
         i = np.random.randint(0, seq_len - self.block_len)
-        seq = seq[i:i + self.block_len]
-        mlm_i = np.random.randint(0, self.block_len, size=np.int(self.block_len * self.mlm_percentage))
-        mlm_seq = np.array(seq)
-        mlm_seq[mlm_i] = tokenizer.token_to_id('<mask>')
-        mlm_seq = torch.tensor(mlm_seq, dtype=torch.long)
-        original_seq = torch.tensor(seq, dtype=torch.long)
+        seq = torch.LongTensor(seq[i:i + self.block_len])
+        mask_idx = np.random.randint(0, self.block_len, size=np.int(self.block_len * self.mlm_percentage))
+        mask = torch.ones_like(seq)
+        mask[mask_idx] = 0
 
-        return mlm_seq, original_seq
+        return seq, mask
 
 
 def _enqueue_dataloader(txt_file, batch_size, block_len, shuffle, pin_memory, num_workers, q):
     # enqueue (file_name, DataLoader)
-    q.put((txt_file, DataLoader(TextDataset(txt_file, block_len), batch_size, 
-        shuffle=shuffle, pin_memory=pin_memory, num_workers=num_workers)))
+    q.put(DataLoader(TextDataset(txt_file, block_len), batch_size, 
+        shuffle=shuffle, pin_memory=pin_memory, num_workers=num_workers))
 
 
 class TextDataLoaderIterator:
@@ -73,6 +69,7 @@ class TextDataLoaderIterator:
 
     def __next__(self):
         if self.idx == self.end_idx:
+            self.p.close()
             raise StopIteration
         self.idx += 1
         return self.q.get()
@@ -83,12 +80,7 @@ if __name__ == '__main__':
     data_dir = 'data/Gutenberg/txt/'
     txt_files = [data_dir+file_name for file_name in os.listdir(data_dir)][:2]
 
-    dataloaders = TextDataLoaderIterator(txt_files, 64, 64)
-    for txt_file, dataloader in dataloaders:
-        for mlm_seq, original_seq in tqdm(dataloader):
-            mask = torch.zeros_like(mlm_seq)
-            mask[mlm_seq == original_seq] = 1.
-            print(mask)
-            # print(mlm_seq, original_seq)
-            # pass
-        
+    dataloader_iter = TextDataLoaderIterator(txt_files, 64, 64)
+    dataloader = next(iter(dataloader_iter))
+    seq, mask = next(iter(dataloader))
+    assert seq.shape == mask.shape

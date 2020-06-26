@@ -76,6 +76,8 @@ class WordPieceTokenizer:
     def encode(self, text):
         if not self.token2id_updated:
             self._update_token2id()
+        if self.lowercase:
+            text = text.lower()
         return [self.token2id[token] for token in self.p.findall(text)]
 
 

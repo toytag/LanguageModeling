@@ -15,27 +15,32 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 data_dir = 'data/Gutenberg/txt/'
-txt_files = [data_dir+file_name for file_name in os.listdir(data_dir)][::10]
+txt_files = [data_dir + file_name for file_name in os.listdir(data_dir)]
 
 
 if __name__ == '__main__':
 
-    writer = SummaryWriter('runs/experiment-1')
+    checkpoint = torch.load('models/lm/latest.pth')
 
     model = LanguageModel(n_vocab=10000).to(device)
-    optimizer = optim.Adam(model.parameters(), lr=5e-5)
-    lr_scheduler = optim.lr_scheduler.ExponentialLR(optimizer, 0.99)
+    # model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer = optim.SGD(model.parameters(), lr=1e-3, momentum=0.9)
+    # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.9, threshold=0.01, min_lr=1e-6)
+    # lr_scheduler.load_state_dict(checkpoint['lr_scheduler_state_dict'])
     criterion = nn.CrossEntropyLoss()
 
-    dummy_input = torch.LongTensor([[1,2,3,4]]).to(device)
+    writer = SummaryWriter('runs/')
+    dummy_input = torch.ones(()).to(device)
     writer.add_graph(model, dummy_input)
 
+    # global_step = checkpoint['global_step']
     global_step = 0
+
     for epoch in range(10):
-        data_loader_iter = tqdm(TextDataLoaderIterator(txt_files, batch_size=64, block_len=64), position=0)
-        for file_name, data_loader in data_loader_iter:
-            pbar = tqdm(data_loader, desc=file_name, leave=False, position=1)
-            for mlm_seq, original_seq in pbar:
+        pbar = tqdm(TextDataLoaderIterator(txt_files, batch_size=16, block_len=16)
+        for data_loader in data_loader_iter:
+            for mlm_seq, original_seq in data_loader:
                 mask = torch.zeros_like(mlm_seq)
                 mask[mlm_seq == original_seq] = 1.
                 mlm_seq, mask, original_seq = mlm_seq.to(device), mask.to(device), original_seq.to(device)
@@ -47,16 +52,17 @@ if __name__ == '__main__':
                 loss.backward()
                 optimizer.step()
 
+                lr_scheduler.step(loss)
                 global_step += 1
-                if global_step % 100 == 0:
-                    lr_scheduler.step()
 
-                writer.add_scalar('Loss/Train', loss.item(), global_step)
-                pbar.set_postfix({'loss': loss.item()})
+                writer.add_scalar('Loss', loss.item(), global_step)
+                writer.add_scalar('Lr', optimizer.get_lr(), global_step)
+
+            pbar.set_postfix({'loss': loss.item(), 'lr': optimizer.get_lr()})
 
         torch.save({
-            'epoch': epoch+1,
+            'global_step': global_step,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'lr_scheduler_state_dict': lr_scheduler.state_dict(),
-            }, f'models/lm/epoch-{epoch+1}-gs-{global_step}.pth')
+            }, 'models/lm/latest.pth')

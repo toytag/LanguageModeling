@@ -12,7 +12,7 @@ class WordPieceTokenizer:
             special_tokens=[]
         ):
 
-        pattern = r'[\w\']+|[,<.>/?;:\'\"\[\{\]\}\\\|\-_=\+`~!@#$%^&*\(\)]'
+        pattern = r'[a-zA-Z0-9\']+|[,<.>/?;:\'\"\[\{\]\}\\\|\-_=\+`~!@#$%^&*\(\)]'
 
         if vocab_file:
             with open(vocab_file, 'r') as f:
@@ -33,9 +33,13 @@ class WordPieceTokenizer:
 
         self.vocab_size = 0
         self.token2id = {}
-        self.token2id_updated = False
+        self._token2id_updated = False
         self.id2token = {}
-        self.id2token_updated = False
+        self._id2token_updated = False
+
+        if vocab_file:
+            self._update_token2id()
+            self._update_id2token()
 
 
     def build_vocab(self, corpus):
@@ -45,46 +49,48 @@ class WordPieceTokenizer:
         tokens = self.p.findall(corpus)
         self.vocab += Counter(tokens)
 
-        self.token2id_updated = False
-        self.id2token_updated = False
+        self._token2id_updated = False
+        self._id2token_updated = False
 
 
     def _update_token2id(self):
-        self.token2id = {special_token: i for i, special_token in enumerate(self.special_tokens)}
+        # 0 reserved, 1 for unknown token
+        self.token2id = {special_token: i + 2 for i, special_token in enumerate(self.special_tokens)}
         
         for i, (vocab, freq) in enumerate(self.vocab.most_common()):
-            i = i + len(self.special_tokens)
+            i = i + len(self.special_tokens) + 2
             if freq >= self.min_freq and i < self.vocab_size_limit:
                 self.token2id[vocab] = i
 
-        self.vocab_size = len(self.token2id.keys())
-        self.token2id_updated = True
+        self.vocab_size = len(self.token2id.keys()) + 2
+        self._token2id_updated = True
 
 
     def _update_id2token(self):
-        self.id2token = {i: special_token for i, special_token in enumerate(self.special_tokens)}
+        # 0 reserved, 1 for unknown token
+        self.id2token = {i + 2: special_token for i, special_token in enumerate(self.special_tokens)}
 
         for i, (vocab, freq) in enumerate(self.vocab.most_common()):
-            i = i + len(self.special_tokens)
+            i = i + len(self.special_tokens) + 2
             if freq >= self.min_freq and i < self.vocab_size_limit:
                 self.id2token[i] = vocab
                 
-        self.vocab_size = len(self.id2token.keys())
-        self.id2token_updated = True
+        self.vocab_size = len(self.id2token.keys()) + 2
+        self._id2token_updated = True
 
 
     def encode(self, text):
-        if not self.token2id_updated:
+        if not self._token2id_updated:
             self._update_token2id()
         if self.lowercase:
             text = text.lower()
-        return [self.token2id[token] for token in self.p.findall(text)]
+        return [self.token2id.get(token, 1) for token in self.p.findall(text)]
 
 
     def decode(self, ids):
-        if not self.id2token_updated:
+        if not self._id2token_updated:
             self._update_id2token()
-        return ' '.join([self.id2token[id_] for id_ in ids])
+        return ' '.join([self.id2token.get(id_, '[UNK]') for id_ in ids])
 
     
     def save(self, filename):
@@ -111,10 +117,12 @@ if __name__ == '__main__':
             text = f.read()
         tokenizer.build_vocab(text)
     
-    print(tokenizer.decode(tokenizer.encode('what are you <mask>')))
+    print(tokenizer.decode(tokenizer.encode('what are you <mask> fadskjfaf')))
     print('vocab size:', tokenizer.vocab_size)
     tokenizer.save('models/tokenizer/tokenizer.json')
     tokenizer = WordPieceTokenizer('models/tokenizer/tokenizer.json')
-    print(tokenizer.decode(tokenizer.encode('what are you <mask>')))
+    print(tokenizer.decode(tokenizer.encode('what are you <mask> fadskjfaf')))
     print('vocab size:', tokenizer.vocab_size)
+
+    print(text[:51], tokenizer.decode(tokenizer.encode(text[:51])))
     

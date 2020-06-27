@@ -24,6 +24,8 @@ class LanguageModel(nn.Module):
 
     def forward(self, src_seq, src_mask=None):
         output = self.dropout(self.pos_enc(self.embed(src_seq)))
+        if src_mask is not None:
+            output = output.masked_fill(src_mask.unsqueeze(-1)==0, 0)
         for transformer_block in self.transformers:
             output, _ = transformer_block(output, src_mask)
         output = self.lm_head(output) * self.logit_scale
@@ -32,6 +34,6 @@ class LanguageModel(nn.Module):
 
 if __name__ == '__main__':
     # test
-    model = LanguageModel(n_vocab=30000)
+    model = LanguageModel(n_vocab=10000)
     with torch.no_grad():
-        print(model(torch.randint(30000, (1, 16), dtype=torch.long)))
+        print(model(torch.randint(10000, (1, 16), dtype=torch.long)))

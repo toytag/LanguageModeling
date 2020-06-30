@@ -43,7 +43,7 @@ if __name__ == '__main__':
             for seq, mask in data_loader:
                 seq, mask = seq.to(device), mask.to(device)
 
-                output, *_ = model(seq, src_mask=mask)
+                output, *_ = model(seq.masked_fill(mask==0, LanguageModel.mask_idx), src_mask=mask)
                 loss = criterion(output[mask==0], seq[mask==0])
 
                 optimizer.zero_grad()
@@ -53,8 +53,8 @@ if __name__ == '__main__':
                 lr_scheduler.step(loss)
                 global_step += 1
 
-                writer.add_scalar('Loss', loss.item(), global_step)
-                writer.add_scalar('Lr', optimizer.param_groups[0]['lr'], global_step)
+                writer.add_scalar('loss', loss.item(), global_step)
+                writer.add_scalar('lr', optimizer.param_groups[0]['lr'], global_step)
 
             pbar.set_postfix({'loss': loss.item(), 'lr': optimizer.param_groups[0]['lr']})
 

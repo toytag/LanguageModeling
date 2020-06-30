@@ -2,7 +2,7 @@ import re, json
 from collections import Counter
 
 
-class WordPieceTokenizer:
+class WordTokenizer:
     def __init__(
             self,
             vocab_file=None,
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     data_dir = 'data/Gutenberg/split/'
     txt_files = [data_dir + file_name for file_name in os.listdir(data_dir)]
 
-    tokenizer = WordPieceTokenizer(special_tokens=['<mask>'])
+    tokenizer = WordTokenizer(special_tokens=['<mask>'])
 
     for txt_file in txt_files:
         with open(txt_file, 'r') as f:
@@ -120,7 +120,7 @@ if __name__ == '__main__':
     print(tokenizer.decode(tokenizer.encode('what are you <mask> fadskjfaf')))
     print('vocab size:', tokenizer.vocab_size)
     tokenizer.save('models/tokenizer/tokenizer.json')
-    tokenizer = WordPieceTokenizer('models/tokenizer/tokenizer.json')
+    tokenizer = WordTokenizer('models/tokenizer/tokenizer.json')
     print(tokenizer.decode(tokenizer.encode('what are you <mask> fadskjfaf')))
     print('vocab size:', tokenizer.vocab_size)
 

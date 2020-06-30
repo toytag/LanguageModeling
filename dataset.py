@@ -7,10 +7,10 @@ from tqdm import tqdm
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-from tokenizer import WordPieceTokenizer
+from tokenizer import WordTokenizer
 
 
-_tokenizer = WordPieceTokenizer('models/tokenizer/tokenizer.json')
+_tokenizer = WordTokenizer('models/tokenizer/tokenizer.json')
 
 
 class TextDataset(Dataset):

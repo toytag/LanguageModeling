@@ -26,7 +26,7 @@ if __name__ == '__main__':
     # model.load_state_dict(checkpoint['model_state_dict'])
     optimizer = optim.Adam(model.parameters(), lr=5e-4)
     # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.95, patience=30, threshold=0.001, min_lr=1e-6)
+    lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.95, patience=30, min_lr=1e-6)
     # lr_scheduler.load_state_dict(checkpoint['lr_scheduler_state_dict'])
     criterion = nn.CrossEntropyLoss()
 
@@ -56,8 +56,7 @@ if __name__ == '__main__':
 
                 writer.add_scalar('loss', loss.item(), global_step)
                 writer.add_scalar('lr', optimizer.param_groups[0]['lr'], global_step)
-
-            pbar.set_postfix({'loss': loss.item(), 'lr': optimizer.param_groups[0]['lr']})
+                pbar.set_postfix({'loss': loss.item(), 'lr': optimizer.param_groups[0]['lr']})
 
         torch.save({
             'global_step': global_step,

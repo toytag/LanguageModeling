@@ -1,11 +1,6 @@
-import random
-random.seed(1)
-
-
 import torch
 from torch import nn
 from LearnTransformer import PositionalEncoding, TransformerBlock
-
 
 
 class LanguageModel(nn.Module):

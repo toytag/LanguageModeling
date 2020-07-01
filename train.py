@@ -1,4 +1,4 @@
-import os
+import os, time
 import numpy as np
 from tqdm import tqdm
 
@@ -10,12 +10,11 @@ from torch.utils.tensorboard import SummaryWriter
 from dataset import TextDataLoaderIterator
 from model import LanguageModel
 
-
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 data_dir = 'data/Gutenberg/split/'
-txt_files = [data_dir + file_name for file_name in os.listdir(data_dir)]
+txt_files = [data_dir + file_name for file_name in os.listdir(data_dir)][:5]
 
 
 if __name__ == '__main__':
@@ -24,13 +23,13 @@ if __name__ == '__main__':
 
     model = LanguageModel(n_vocab=10000).to(device)
     # model.load_state_dict(checkpoint['model_state_dict'])
-    optimizer = optim.Adam(model.parameters(), lr=5e-4)
+    optimizer = optim.Adam(model.parameters(), lr=1e-4)
     # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.95, patience=30, min_lr=1e-6)
+    lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.95, patience=100, min_lr=1e-6)
     # lr_scheduler.load_state_dict(checkpoint['lr_scheduler_state_dict'])
     criterion = nn.CrossEntropyLoss()
 
-    writer = SummaryWriter('runs/')
+    writer = SummaryWriter(f'runs/{time.strftime('%Y%m%d-%I:%M%p', time.localtime())}')
     dummy_input = torch.LongTensor([[1]]).to(device)
     writer.add_graph(model, dummy_input)
 
@@ -38,7 +37,7 @@ if __name__ == '__main__':
     global_step = 0
 
     for epoch in range(10):
-        pbar = tqdm(TextDataLoaderIterator(txt_files, batch_size=16, block_len=16))
+        pbar = tqdm(TextDataLoaderIterator(txt_files, batch_size=16, block_len=64))
         for data_loader in pbar:
             for seq, mask in data_loader:
                 seq, mask = seq.to(device), mask.to(device)

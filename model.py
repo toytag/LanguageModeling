@@ -16,22 +16,16 @@ class LanguageModel(nn.Module):
             for _ in range(n_layer)
         ])
         self.lm_head = nn.Linear(d_model, n_vocab, bias=False)
+        self.bias = nn.Parameter(torch.zeros(n_vocab))
 
-        # maybe this is better?
-        for p in self.parameters():
-            if p.dim() > 1:
-                nn.init.xavier_uniform_(p) 
-
-        self.logit_scale = 1.
         if embed_weight_sharing:
-            self.embed.weight = self.lm_head.weight
-            self.logit_scale = d_model ** -0.5
+            self.lm_head.weight = self.embed.weight
 
     def forward(self, src_seq, src_mask=None):
         output = self.dropout(self.pos_enc(self.embed(src_seq)))
         for transformer_block in self.transformers:
             output, _ = transformer_block(output, src_mask)
-        output = self.lm_head(output) * self.logit_scale
+        output = self.lm_head(output) + self.bias
         return output, 
 
     def num_params(self):

@@ -10,7 +10,7 @@ from torch.utils.data import Dataset, DataLoader
 from tokenizer import WordTokenizer
 
 
-_tokenizer = WordTokenizer('models/tokenizer/tokenizer.json')
+tokenizer = WordTokenizer('models/tokenizer/tokenizer.json')
 
 
 class TextDataset(Dataset):
@@ -20,9 +20,10 @@ class TextDataset(Dataset):
         self.examples = []
         self.block_len = block_len
         for line in textlines:
-            new_tokens = _tokenizer.encode(line)
-            if len(new_tokens) <= self.block_len:
-                continue
+            new_tokens = tokenizer.encode(line)
+            if len(new_tokens) < self.block_len:
+                new_tokens = [0,] * ((64 - len(new_tokens)) // 2) + \
+                    new_tokens + [0,] * ((64 - len(new_tokens)) // 2 + 1)
             self.examples.append(new_tokens)
         self.mlm_percentage = mlm_percentage
 
@@ -31,8 +32,7 @@ class TextDataset(Dataset):
 
     def __getitem__(self, idx):
         seq = self.examples[idx]
-        seq_len = len(seq)
-        i = np.random.randint(0, seq_len - self.block_len)
+        i = np.random.randint(0, len(seq) - self.block_len) if len(seq) > self.block_len else 0
         seq = torch.LongTensor(seq[i:i + self.block_len])
         mask_idx = np.random.randint(0, self.block_len, size=np.int(self.block_len * self.mlm_percentage))
         mask = torch.ones_like(seq)
@@ -43,8 +43,8 @@ class TextDataset(Dataset):
 
 def _enqueue_dataloader(txt_file, batch_size, block_len, shuffle, pin_memory, num_workers, q):
     # enqueue (file_name, DataLoader)
-    q.put(DataLoader(TextDataset(txt_file, block_len), batch_size, 
-        shuffle=shuffle, pin_memory=pin_memory, num_workers=num_workers))
+    q.put(DataLoader(TextDataset(txt_file, block_len),
+        batch_size, shuffle=shuffle, pin_memory=pin_memory, num_workers=num_workers))
 
 
 class TextDataLoaderIterator:
@@ -55,7 +55,7 @@ class TextDataLoaderIterator:
         self.q = self.m.Queue(prefetch_limit)
 
         for txt_file in txt_files:
-            self.p.apply_async(_enqueue_dataloader, 
+            self.p.apply_async(_enqueue_dataloader,
                 (txt_file, batch_size, block_len, shuffle, pin_memory, num_workers, self.q))
 
         self.idx = 0

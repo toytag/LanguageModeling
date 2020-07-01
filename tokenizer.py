@@ -17,8 +17,6 @@ class WordTokenizer:
         if vocab_file:
             with open(vocab_file, 'r') as f:
                 config = json.load(f)
-            vocab_size_limit = config['vocab_size_limit']
-            min_freq = config['min_freq']
             lowercase = config['lowercase']
             special_tokens = config['special_tokens']
             
@@ -96,8 +94,6 @@ class WordTokenizer:
     def save(self, filename):
         with open(filename, 'w') as f:
             json.dump({
-                'vocab_size_limit': self.vocab_size_limit,
-                'min_freq': self.min_freq,
                 'lowercase': self.lowercase,
                 'special_tokens': self.special_tokens,
                 'vocab': self.vocab
@@ -105,6 +101,7 @@ class WordTokenizer:
 
 
 import os
+from tqdm import tqdm
 if __name__ == '__main__':
 
     data_dir = 'data/Gutenberg/split/'
@@ -112,7 +109,7 @@ if __name__ == '__main__':
 
     tokenizer = WordTokenizer(special_tokens=['<mask>'])
 
-    for txt_file in txt_files:
+    for txt_file in tqdm(txt_files):
         with open(txt_file, 'r') as f:
             text = f.read()
         tokenizer.build_vocab(text)
@@ -120,9 +117,6 @@ if __name__ == '__main__':
     print(tokenizer.decode(tokenizer.encode('what are you <mask> fadskjfaf')))
     print('vocab size:', tokenizer.vocab_size)
     tokenizer.save('models/tokenizer/tokenizer.json')
-    tokenizer = WordTokenizer('models/tokenizer/tokenizer.json')
+    tokenizer = WordTokenizer('models/tokenizer/tokenizer.json', vocab_size_limit=30000)
     print(tokenizer.decode(tokenizer.encode('what are you <mask> fadskjfaf')))
     print('vocab size:', tokenizer.vocab_size)
-
-    print(text[:51], tokenizer.decode(tokenizer.encode(text[:51])))
-    

@@ -9,13 +9,11 @@ from LearnTransformer import PositionalEncoding, TransformerBlock
 
 
 class LanguageModel(nn.Module):
-    mask_idx = 0
-
     def __init__(self, n_vocab, d_model=256, d_hidden=1024, n_layer=8,
                  n_head=8, d_k=32, d_v=32, n_position=64, dropout=0.1,
                  embed_weight_sharing=True):
         super(LanguageModel, self).__init__()
-        self.embed = nn.Embedding(n_vocab, d_model, padding_idx=LanguageModel.mask_idx)
+        self.embed = nn.Embedding(n_vocab, d_model, padding_idx=0)
         self.pos_enc = PositionalEncoding(d_model, n_position=n_position)
         self.dropout = nn.Dropout(p=dropout)
         self.transformers = nn.ModuleList([
@@ -52,5 +50,5 @@ if __name__ == '__main__':
     with torch.no_grad():
         model.eval()
         input_, mask = torch.LongTensor([[1, 2, 4, 8]]), torch.LongTensor([[1, 1, 1, 0]])
-        output, *_ = model(input_.masked_fill(mask==0, LanguageModel.mask_idx), src_mask=mask)
+        output, *_ = model(input_.masked_fill(mask==0, 0), src_mask=mask)
         print(output)

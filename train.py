@@ -43,8 +43,9 @@ if __name__ == '__main__':
             for seq, mask in data_loader:
                 seq, mask = seq.to(device), mask.to(device)
 
-                output, *_ = model(seq.masked_fill(mask==0, LanguageModel.mask_idx), src_mask=mask)
-                loss = criterion(output[mask==0], seq[mask==0])
+                output, *_ = model(seq.masked_fill(mask==0, 0), src_mask=mask)
+                # loss = criterion(output[mask==0], seq[mask==0])
+                loss = criterion(output.view(-1, 10000), seq.view(-1))
 
                 optimizer.zero_grad()
                 loss.backward()

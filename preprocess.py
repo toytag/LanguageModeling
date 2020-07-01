@@ -25,7 +25,7 @@ def proprocess(file_name):
 def split2files(idx, file_name):
     with open(file_name, 'r', encoding='utf-8') as f:
         text = f.read() + '\n'
-    with open(split_file_dir + f'f{idx%50:02d}.txt', 'w') as f:
+    with open(split_file_dir + f'f{idx%100:02d}.txt', 'a') as f:
         f.write(text)
 
 
@@ -42,5 +42,5 @@ if __name__ == '__main__':
 
     thread_map(proprocess, txt_files, max_workers=os.cpu_count())
 
-    for i, file_name in tqdm(enumerate(txt_files)):
+    for i, file_name in enumerate(tqdm(txt_files)):
         split2files(i, file_name)
